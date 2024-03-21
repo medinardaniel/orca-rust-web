@@ -6,3 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+actix-web = "4"
+rand = "0.8"
+orca = { git = "https://github.com/scrippt-tech/orca", package = "orca-core" }
+serde = "1.0.197"
+tokio = "1.36.0"
+anyhow = "1.0"
+candle-examples = "0.4.1"
