@@ -1,29 +1,13 @@
-# Use the official Rust image as a parent image
-FROM rust:1.63 as builder
+FROM rust:1.63 as build
 
-# Create a new empty shell project
-RUN USER=root cargo new --bin rust-web-service
-WORKDIR /rust-web-service
+# Install git and other dependencies, if necessary
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
-# Copy your manifests
-COPY ./Cargo.lock ./Cargo.lock
-COPY ./Cargo.toml ./Cargo.toml
+# Clone and build your project directly
+RUN git clone https://github.com/medinardaniel/rust-web-service.git /usr/src/myapp && \
+    cd /usr/src/myapp && \
+    cargo build --release
 
-# This trick will cache your dependencies
-RUN cargo build --release
-RUN rm src/*.rs
-
-# Now that the dependencies are built, copy your source tree
-COPY ./src ./src
-
-# Build for release.
-RUN rm ./target/release/deps/rust_web_service*
-RUN cargo build --release
-
-# The final stage, copy the binaries and entrypoint from the builder stage
-FROM debian:buster-slim
-COPY --from=builder /rust-web-service/target/release/rust-web-service .
-COPY --from=builder /rust-web-service/Rocket.toml .
-
-# Set the startup command to run your binary
+FROM debian:buster-slim as runtime
+COPY --from=build /usr/src/myapp/target/release/rust-web-service /usr/local/bin/rust-web-service
 CMD ["./rust-web-service"]
