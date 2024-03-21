@@ -1,16 +1,17 @@
+use actix_web::{web, App, HttpResponse, HttpServer, Responder, post};
 use orca::pipeline::simple::LLMPipeline;
 use orca::pipeline::Pipeline;
 use orca::llm::quantized::Quantized;
 use orca::llm::quantized::Model;
 use orca::prompt::context::Context;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)] // Add Deserialize here
 pub struct Data {
     message: String,
 }
 
-// Change function signature
+
 pub async fn get_response(message: String) -> anyhow::Result<String> {
     let instance = Quantized::new();
     let model_variant = Model::L7bChat;
@@ -35,10 +36,22 @@ pub async fn get_response(message: String) -> anyhow::Result<String> {
     Ok(res)
 }
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    let message = "hi, how are you?".to_string();
-    let response = get_response(message).await?;
-    println!("{}", response);
-    Ok(())
+#[post("/get_response")]
+async fn get_response_api(info: web::Json<Data>) -> impl Responder {
+    let response = get_response(info.message.clone()).await;
+    match response {
+        Ok(res) => HttpResponse::Ok().body(res),
+        Err(_) => HttpResponse::InternalServerError().body("Error generating response"),
+    }
+}
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    HttpServer::new(|| {
+        App::new()
+            .service(get_response_api)
+    })
+    .bind(("127.0.0.1", 8080))?
+    .run()
+    .await
 }

@@ -1,0 +1,8 @@
+target/
+**/*.rs.bk
+**/*.swp
+.git/
+.gitignore
+.dockerignore
+Dockerfile
+README.md
